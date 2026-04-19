@@ -34,3 +34,5 @@ jobs:
       #крок 5:запуск тестів (з лаби 2)
       - name: Run unit tests
         run: npm run test
+
+    
