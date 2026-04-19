@@ -10,3 +10,18 @@ node_modules/
 # Результати збірки
 dist/
 build/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+#ігноруємо локальні налаштування та секретні дані
+.env
+.env.local
+
+#але дозволяємо відстежувати налаштування для продакшену
+# (якщо вони не містять секретних данних)
+!.env.production
