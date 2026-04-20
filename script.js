@@ -1,32 +1,45 @@
 import posthog from 'posthog-js';
 
-// ініціалізація PostHog
+// Ініціалізація
 posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
     api_host: import.meta.env.VITE_POSTHOG_HOST,
-    person_profiles: 'always' 
+    person_profiles: 'always'
 });
 
-// логіка статусу додатка + Аналітика перегляду
-const appStatus = import.meta.env.VITE_APP_STATUS;
-const statusElement = document.getElementById('app-status');
+window.posthog = posthog;
 
-if (statusElement) {
-    statusElement.textContent = appStatus;
-    //відстежуємо, який саме статус бачить користувач
-    posthog.capture('app_status_viewed', { status: appStatus });
-}
-
-//відстеження початку заповнення (що саме цікавить користувача першим)
-['distance', 'consumption', 'price'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-        el.addEventListener('focus', () => {
-            posthog.capture('input_focus', { field: id });
-        }, { once: true }); // спрацює один раз за сесію для кожного поля
+window.addEventListener('DOMContentLoaded', () => {
+    // 1. Статус додатка
+    const appStatus = import.meta.env.VITE_APP_STATUS;
+    const statusElement = document.getElementById('app-status');
+    if (statusElement) {
+        statusElement.textContent = appStatus;
     }
+
+    // 2. FEATURE FLAG: Перевірка прапорця "show-eco-tips"
+    posthog.onFeatureFlags(() => {
+        if (posthog.isFeatureEnabled('show-eco-tips')) {
+            const ecoBlock = document.getElementById('eco-feature');
+            if (ecoBlock) {
+                ecoBlock.style.display = 'block';
+                // Фіксуємо подію, що користувач побачив нову фічу (для звіту)
+                posthog.capture('eco_tip_displayed');
+            }
+        }
+    });
+
+    // 3. Відстеження фокусу полів
+    ['distance', 'consumption', 'price'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('focus', () => {
+                posthog.capture('input_focus', { field: id });
+            }, { once: true });
+        }
+    });
 });
 
-// 4. Основна функція розрахунку
+// Функція розрахунку
 function calculate() {
     const distance = document.getElementById('distance').value;
     const consumption = document.getElementById('consumption').value;
@@ -35,31 +48,19 @@ function calculate() {
     if (distance > 0 && consumption > 0 && price > 0) {
         const total = (distance / 100) * consumption * price;
         const resultElement = document.getElementById('result');
-        
         if (resultElement) {
-            const finalResult = total.toFixed(2);
-            resultElement.innerText = `Вартість: ${finalResult} грн`;
-
-            // Успішна подія
+            const res = total.toFixed(2);
+            resultElement.innerText = `Вартість: ${res} грн`;
+            
             posthog.capture('fuel_calculated', {
                 distance_km: parseFloat(distance),
-                avg_consumption: parseFloat(consumption),
-                fuel_price_uah: parseFloat(price),
-                total_cost: parseFloat(finalResult)
+                total_cost: parseFloat(res)
             });
         }
     } else {
         alert("Будь ласка, введіть коректні дані");
-        
-        // Відстеження помилок (для покращення UX)
-        posthog.capture('calculation_failed', {
-            reason: 'invalid_input',
-            has_distance: !!distance,
-            has_consumption: !!consumption,
-            has_price: !!price
-        });
+        posthog.capture('calculation_failed');
     }
 }
 
-// Явно вказуємо, що функція використовується глобально
 window.calculate = calculate;
