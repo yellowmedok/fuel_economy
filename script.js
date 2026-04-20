@@ -1,32 +1,35 @@
 import posthog from 'posthog-js';
 
-// ініціалізація PostHog
+// 1. Ініціалізація PostHog
 posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
     api_host: import.meta.env.VITE_POSTHOG_HOST,
     person_profiles: 'always' 
 });
 
-// логіка статусу додатка + Аналітика перегляду
-const appStatus = import.meta.env.VITE_APP_STATUS;
-const statusElement = document.getElementById('app-status');
-
-if (statusElement) {
-    statusElement.textContent = appStatus;
-    //відстежуємо, який саме статус бачить користувач
-    posthog.capture('app_status_viewed', { status: appStatus });
-}
-
-//відстеження початку заповнення (що саме цікавить користувача першим)
-['distance', 'consumption', 'price'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-        el.addEventListener('focus', () => {
-            posthog.capture('input_focus', { field: id });
-        }, { once: true }); // спрацює один раз за сесію для кожного поля
+// 2. Логіка, яка має спрацювати ОДРАЗУ після завантаження структури сторінки
+window.addEventListener('DOMContentLoaded', () => {
+    
+    // Перевірка статусу додатка (з Лаби 4)
+    const appStatus = import.meta.env.VITE_APP_STATUS;
+    const statusElement = document.getElementById('app-status');
+    if (statusElement) {
+        statusElement.textContent = appStatus;
+        posthog.capture('app_status_viewed', { status: appStatus });
     }
+
+    // Відстеження фокусу на полях (тепер вони точно знайдуться в DOM)
+    ['distance', 'consumption', 'price'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('focus', () => {
+                posthog.capture('input_focus', { field: id });
+                console.log(`Event sent: input_focus for ${id}`); // для самоперевірки в консолі
+            }, { once: true }); // спрацює 1 раз для кожного поля за сесію
+        }
+    });
 });
 
-// 4. Основна функція розрахунку
+// 3. Основна функція розрахунку
 function calculate() {
     const distance = document.getElementById('distance').value;
     const consumption = document.getElementById('consumption').value;
@@ -40,7 +43,7 @@ function calculate() {
             const finalResult = total.toFixed(2);
             resultElement.innerText = `Вартість: ${finalResult} грн`;
 
-            // Успішна подія
+            // Кастомна подія успішного розрахунку
             posthog.capture('fuel_calculated', {
                 distance_km: parseFloat(distance),
                 avg_consumption: parseFloat(consumption),
@@ -51,15 +54,12 @@ function calculate() {
     } else {
         alert("Будь ласка, введіть коректні дані");
         
-        // Відстеження помилок (для покращення UX)
+        // Відстеження помилок вводу
         posthog.capture('calculation_failed', {
-            reason: 'invalid_input',
-            has_distance: !!distance,
-            has_consumption: !!consumption,
-            has_price: !!price
+            reason: 'invalid_input'
         });
     }
 }
 
-// Явно вказуємо, що функція використовується глобально
+// Глобальний доступ для кнопки onclick="calculate()"
 window.calculate = calculate;
