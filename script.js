@@ -6,6 +6,8 @@ posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
     person_profiles: 'always'
 });
 
+window.posthog = posthog;
+
 window.addEventListener('DOMContentLoaded', () => {
     // 1. Статус додатка
     const appStatus = import.meta.env.VITE_APP_STATUS;
