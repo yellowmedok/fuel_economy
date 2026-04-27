@@ -24,10 +24,13 @@ Sentry.init({
 window.posthog = posthog;
 
 window.addEventListener('DOMContentLoaded', () => {
-    // 3. Додаємо контекст користувача в Sentry (щоб знати, чиї розрахунки впали)
+    //yалаштування контексту користувача (Крок 3 Лабораторної №6)
+    //симуляція ідентифікації
     Sentry.setUser({ 
-        id: "student_user", 
-        project: "fuel-economy" 
+        id: "tytskyi", //  унікальний ID (наприклад, номер групи)
+        email: "Bohdan.Tytskyi.PP.2023@lpnu.ua", //  пошта для звіту
+        segment: "beta_tester", // Кастомний сегмент
+        app_version: "1.0.4"    // Додатковий тег
     });
 
     const appStatus = import.meta.env.VITE_APP_STATUS;
@@ -63,7 +66,7 @@ window.addEventListener('DOMContentLoaded', () => {
             throw new Error("Sentry Test Error: Критичний збій у Fuel Economy!");
         });
     }
-    
+
 });
 
 // Функція розрахунку
