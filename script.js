@@ -8,7 +8,7 @@ posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
 });
 
 Sentry.init({
-    dsn: import.meta.env.VITE_SENTRY_DSN, 
+    dsn: "https://1daf81be119f0de3a52e143c67a124cb@o4511291504394240.ingest.de.sentry.io/4511291517042768", 
     integrations: [
         Sentry.browserTracingIntegration(),
         Sentry.replayIntegration(),
