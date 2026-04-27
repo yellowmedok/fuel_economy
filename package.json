@@ -23,6 +23,9 @@
     "vitest": "latest"
   },
   "dependencies": {
+    "@sentry/browser": "^10.50.0",
+    "@sentry/node": "^10.50.0",
+    "@sentry/tracing": "^7.120.4",
     "posthog-js": "^1.369.3"
   }
 }
