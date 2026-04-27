@@ -91,4 +91,12 @@ export function calculate() {
     }
 }
 
+try {
+    // Викликаємо функцію, якої не існує
+    confirmSentryWorking(); 
+} catch (e) {
+    console.log("Sentry catching test error...");
+    Sentry.captureException(e);
+}
+
 window.calculate = calculate;
