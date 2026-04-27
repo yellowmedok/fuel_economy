@@ -47,13 +47,13 @@ window.addEventListener('DOMContentLoaded', () => {
         breakBtn.addEventListener('click', () => {
             // 1. ПРИМУСОВО встановлюємо дані користувача безпосередньо перед помилкою
             Sentry.setUser({ 
-                id: "Bohdan-PP-34", 
+                id: "tytskyi", 
                 email: "Bohdan.Tytskyi.PP.2023@lpnu.ua",
-                segment: "student_polytech"
+                segment: "test"
             });
 
             // 2. Додаємо кастомний тег (їх найлегше знайти в Sentry)
-            Sentry.setTag("lab_work", "6");
+            Sentry.setTag("lab", "6");
             Sentry.setTag("project_name", "fuel_economy");
 
             console.log("Sentry context forced. Launching error in 3... 2... 1...");
