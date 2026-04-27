@@ -1,82 +1,67 @@
 import posthog from 'posthog-js';
 import * as Sentry from "@sentry/browser"; 
 
-// Ініціалізація PostHog
+// 1. Ініціалізація (Має бути на самому початку)
 posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
     api_host: import.meta.env.VITE_POSTHOG_HOST,
     person_profiles: 'always'
 });
 
-// 2. Ініціалізація Sentry (Моніторинг помилок)
 Sentry.init({
     dsn: import.meta.env.VITE_SENTRY_DSN, 
     integrations: [
         Sentry.browserTracingIntegration(),
         Sentry.replayIntegration(),
     ],
-    // Tracing
     tracesSampleRate: 1.0, 
-    // Session Replay (запис екрану при помилках)
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
 });
 
+// Робимо для доступу в консолі (опціонально)
 window.posthog = posthog;
+window.Sentry = Sentry;
 
 window.addEventListener('DOMContentLoaded', () => {
-    //yалаштування контексту користувача (Крок 3 Лабораторної №6)
-    //симуляція ідентифікації
+    // Встановлюємо користувача ВІДРАЗУ при завантаженні
     Sentry.setUser({ 
-        id: "tytskyi", //  унікальний ID (наприклад, номер групи)
-        email: "Bohdan.Tytskyi.PP.2023@lpnu.ua", //  пошта для звіту
-        segment: "beta_tester", // Кастомний сегмент
-        app_version: "1.0.4"    // Додатковий тег
+        id: "tytskyi-pp-34", 
+        email: "Bohdan.Tytskyi.PP.2023@lpnu.ua", 
+        segment: "beta_tester",
+        app_version: "1.0.4"
     });
 
-    const appStatus = import.meta.env.VITE_APP_STATUS;
+    // Статус системи
     const statusElement = document.getElementById('app-status');
     if (statusElement) {
-        statusElement.textContent = appStatus;
+        statusElement.textContent = import.meta.env.VITE_APP_STATUS;
     }
 
-    //  код Feature Flags
+    // Feature Flags (PostHog)
     posthog.onFeatureFlags(() => {
         if (posthog.isFeatureEnabled('show-eco-tips')) {
             const ecoBlock = document.getElementById('eco-feature');
-            if (ecoBlock) {
-                ecoBlock.style.display = 'block';
-                posthog.capture('eco_tip_displayed');
-            }
+            if (ecoBlock) ecoBlock.style.display = 'block';
         }
     });
 
-    // Відстеження фокусу
-    ['distance', 'consumption', 'price'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.addEventListener('focus', () => {
-                posthog.capture('input_focus', { field: id });
-            }, { once: true });
-        }
-    });
-
+    // Кнопка "Break the world" — ЛИШЕ ТУТ
     const breakBtn = document.getElementById('break-world-btn');
     if (breakBtn) {
         breakBtn.addEventListener('click', () => {
+            // Додатково підстрахуємося: перевіримо чи встановлено юзера перед киданням помилки
+            console.log("Sentry user set to:", Sentry.getClient()?.getOptions()?.dsn);
             throw new Error("Sentry Test Error: Критичний збій у Fuel Economy!");
         });
     }
-
 });
 
-// Функція розрахунку
-function calculate() {
+// Функція розрахунку (залишаємо як була, вона ок)
+export function calculate() {
     const distance = document.getElementById('distance').value;
     const consumption = document.getElementById('consumption').value;
     const price = document.getElementById('price').value;
 
-    // 4. Спеціальна кнопка/умова для виклику помилки (для звіту)
-    // Якщо користувач введе відстань 999 — імітуємо критичну помилку
     if (distance == "999") {
         throw new Error("FuelCalculatorCriticalError: Unexpected distance value!");
     }
@@ -85,23 +70,13 @@ function calculate() {
         const total = (distance / 100) * consumption * price;
         const resultElement = document.getElementById('result');
         if (resultElement) {
-            const res = total.toFixed(2);
-            resultElement.innerText = `Вартість: ${res} грн`;
-            
-            posthog.capture('fuel_calculated', {
-                distance_km: parseFloat(distance),
-                total_cost: parseFloat(res)
-            });
+            resultElement.innerText = `Вартість: ${total.toFixed(2)} грн`;
+            posthog.capture('fuel_calculated', { distance_km: parseFloat(distance), total_cost: total });
         }
     } else {
         alert("Будь ласка, введіть коректні дані");
-        posthog.capture('calculation_failed');
     }
 }
 
-//знаходимо кнопку за ID і вішаємо на неї помилку
-document.getElementById('break-world-btn').addEventListener('click', () => {
-    throw new Error("Sentry Test Error: Критичний збій у Fuel Economy!");
-});
-
+// Прив'язка до window для доступу з HTML
 window.calculate = calculate;
