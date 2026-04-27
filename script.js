@@ -1,7 +1,7 @@
 import posthog from 'posthog-js';
 import * as Sentry from "@sentry/browser"; 
 
-// 1. Ініціалізація (Має бути на самому початку)
+// 1. Ініціалізація SDK (виконується миттєво)
 posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
     api_host: import.meta.env.VITE_POSTHOG_HOST,
     person_profiles: 'always'
@@ -18,20 +18,16 @@ Sentry.init({
     replaysOnErrorSampleRate: 1.0,
 });
 
-// Робимо для доступу в консолі (опціонально)
 window.posthog = posthog;
 window.Sentry = Sentry;
 
 window.addEventListener('DOMContentLoaded', () => {
-    // Встановлюємо користувача ВІДРАЗУ при завантаженні
+    // Встановлюємо початковий контекст (про всяк випадок)
     Sentry.setUser({ 
         id: "tytskyi-pp-34", 
-        email: "Bohdan.Tytskyi.PP.2023@lpnu.ua", 
-        segment: "beta_tester",
-        app_version: "1.0.4"
+        email: "Bohdan.Tytskyi.PP.2023@lpnu.ua"
     });
 
-    // Статус системи
     const statusElement = document.getElementById('app-status');
     if (statusElement) {
         statusElement.textContent = import.meta.env.VITE_APP_STATUS;
@@ -45,24 +41,38 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Кнопка "Break the world" — ЛИШЕ ТУТ
+    // НОВИЙ ОБРОБНИК КНОПКИ "Break the world"
     const breakBtn = document.getElementById('break-world-btn');
     if (breakBtn) {
         breakBtn.addEventListener('click', () => {
-            // Додатково підстрахуємося: перевіримо чи встановлено юзера перед киданням помилки
-            console.log("Sentry user set to:", Sentry.getClient()?.getOptions()?.dsn);
+            // 1. ПРИМУСОВО встановлюємо дані користувача безпосередньо перед помилкою
+            Sentry.setUser({ 
+                id: "Bohdan-PP-34", 
+                email: "Bohdan.Tytskyi.PP.2023@lpnu.ua",
+                segment: "student_polytech"
+            });
+
+            // 2. Додаємо кастомний тег (їх найлегше знайти в Sentry)
+            Sentry.setTag("lab_work", "6");
+            Sentry.setTag("project_name", "fuel_economy");
+
+            console.log("Sentry context forced. Launching error in 3... 2... 1...");
+
+            // 3. Генеруємо помилку
             throw new Error("Sentry Test Error: Критичний збій у Fuel Economy!");
         });
     }
 });
 
-// Функція розрахунку (залишаємо як була, вона ок)
+// Функція розрахунку
 export function calculate() {
     const distance = document.getElementById('distance').value;
     const consumption = document.getElementById('consumption').value;
     const price = document.getElementById('price').value;
 
+    // Швидка перевірка помилки через введення 999
     if (distance == "999") {
+        Sentry.setTag("error_trigger", "manual_input");
         throw new Error("FuelCalculatorCriticalError: Unexpected distance value!");
     }
 
@@ -71,12 +81,14 @@ export function calculate() {
         const resultElement = document.getElementById('result');
         if (resultElement) {
             resultElement.innerText = `Вартість: ${total.toFixed(2)} грн`;
-            posthog.capture('fuel_calculated', { distance_km: parseFloat(distance), total_cost: total });
+            posthog.capture('fuel_calculated', { 
+                distance_km: parseFloat(distance), 
+                total_cost: total 
+            });
         }
     } else {
         alert("Будь ласка, введіть коректні дані");
     }
 }
 
-// Прив'язка до window для доступу з HTML
 window.calculate = calculate;
