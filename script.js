@@ -62,6 +62,15 @@ window.addEventListener('DOMContentLoaded', () => {
             throw new Error("Sentry Test Error: Критичний збій у Fuel Economy!");
         });
     }
+
+    const logoutBtn = document.getElementById('logout-btn'); 
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+            Sentry.setUser(null);
+            console.log("Sentry context cleared");
+            alert("Контекст користувача очищено!");
+        });
+    }
 });
 
 // Функція розрахунку
